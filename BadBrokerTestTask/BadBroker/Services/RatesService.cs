@@ -33,6 +33,7 @@ namespace BadBroker.Services
             else
             {
                 var newRates = await GetMissingRates(filterModel, cachingRates);
+                await _ratesRepository.AddRangeRatesInfoAsync(newRates);
                 var result = cachingRates.ToList(); 
                 result.AddRange(newRates);
                 return result.GroupBy(x => new {x.ResultCurrencyId, x.RateDate}).Select(x => x.First());
@@ -93,35 +94,46 @@ namespace BadBroker.Services
         private async Task<IEnumerable<Rate>> GetMissingRates(RateFilterModel filterModel,
             IEnumerable<Rate> cachingRates)
         {
-            var groupingCachingRates = cachingRates.GroupBy(x => x.BaseCurrencyId);
-            var fullMissingResultCurrency =
-                GetFullMissingResultCurrencyCodes(groupingCachingRates.Select(x => x.First().ResultCurrency.Code), 
+            var response = new RatesResponse(); 
+            if (!cachingRates.Any())
+            {
+                response = await _externalRatesService.GetRatesAsync(filterModel.DateFrom,
+                    filterModel.DateTo,
+                    filterModel.BaseCurrency.Code,
                     filterModel.ResultCurrencyList.Select(x => x.Code));
-            var partiallyMissingResultCurrency =
-                GetPartiallyMissingResultCurrencyCodes(groupingCachingRates, filterModel.DateFrom, filterModel.DateTo);
-            var minMaxUpdatingInterval = new Tuple<DateTime, DateTime>(DateTime.Today, DateTime.Today);
-            if (!partiallyMissingResultCurrency.Any() && !fullMissingResultCurrency.Any())
-            {
-                return new List<Rate>();
-            }
-            
-            if (fullMissingResultCurrency.Any())
-            {
-                minMaxUpdatingInterval = new Tuple<DateTime, DateTime>(filterModel.DateFrom, filterModel.DateTo);
             }
             else
             {
-                if (partiallyMissingResultCurrency.Any())
+                var groupingCachingRates = cachingRates.GroupBy(x => x.BaseCurrencyId);
+                var fullMissingResultCurrency =
+                    GetFullMissingResultCurrencyCodes(groupingCachingRates.Select(x => x.First().ResultCurrency.Code), 
+                        filterModel.ResultCurrencyList.Select(x => x.Code));
+                var partiallyMissingResultCurrency =
+                    GetPartiallyMissingResultCurrencyCodes(groupingCachingRates, filterModel.DateFrom, filterModel.DateTo);
+                var minMaxUpdatingInterval = new Tuple<DateTime, DateTime>(DateTime.Today, DateTime.Today);
+                if (!partiallyMissingResultCurrency.Any() && !fullMissingResultCurrency.Any())
                 {
-                    minMaxUpdatingInterval = GetMinMaxMissingIntervalByCachingItems(cachingRates);
+                    return new List<Rate>();
                 }
-            }
             
-            var missingCurrencyCodes = new List<string>(fullMissingResultCurrency);
-            missingCurrencyCodes.AddRange(partiallyMissingResultCurrency);
-            var response = await _externalRatesService.GetRatesAsync(minMaxUpdatingInterval.Item1, minMaxUpdatingInterval.Item2, 
-                filterModel.BaseCurrency.Code,
-                missingCurrencyCodes);
+                if (fullMissingResultCurrency.Any())
+                {
+                    minMaxUpdatingInterval = new Tuple<DateTime, DateTime>(filterModel.DateFrom, filterModel.DateTo);
+                }
+                else
+                {
+                    if (partiallyMissingResultCurrency.Any())
+                    {
+                        minMaxUpdatingInterval = GetMinMaxMissingIntervalByCachingItems(cachingRates);
+                    }
+                }
+            
+                var missingCurrencyCodes = new List<string>(fullMissingResultCurrency);
+                missingCurrencyCodes.AddRange(partiallyMissingResultCurrency);
+                response = await _externalRatesService.GetRatesAsync(minMaxUpdatingInterval.Item1, minMaxUpdatingInterval.Item2, 
+                    filterModel.BaseCurrency.Code,
+                    missingCurrencyCodes);
+            }
             return await ConvertResponseToList(response);
         }
 
