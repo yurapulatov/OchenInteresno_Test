@@ -19,7 +19,7 @@ namespace BadBroker.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRates([FromQuery] DateTime dateFrom, [FromQuery] DateTime dateTo)
         {
-            var result = await _ratesService.GetRatesAsync(dateFrom, dateTo);
+            var result = await _ratesService.GetRatesAsync(dateFrom, dateTo, null, null);
             return Ok(result);
         }
     }
