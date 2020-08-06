@@ -23,5 +23,8 @@ namespace BadBroker.Interfaces.Repositories
         /// <param name="newCachingRates"></param>
         /// <returns></returns>
         Task AddRangeRatesInfoAsync(IEnumerable<Rate> newCachingRates);
+
+        Task<bool> CheckAvailableBaseCurrencyAsync(int currencyId);
+        Task<bool> CheckAvailableResultCurrenciesAsync(IEnumerable<int> currencyIds);
     }
 }

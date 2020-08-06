@@ -22,9 +22,9 @@ namespace BadBroker.Data.Repositories
         {
             var resultCurrencyIds = filterModel.ResultCurrencyList.Select(x => x.Id);
             return await _appContext.Rates.Where(x => x.BaseCurrencyId == filterModel.BaseCurrency.Id
-                                         && resultCurrencyIds.Contains(x.ResultCurrencyId)
-                                         && x.RateDate >= filterModel.DateFrom 
-                                         && x.RateDate <= filterModel.DateTo).ToListAsync();
+                                                      && resultCurrencyIds.Contains(x.ResultCurrencyId)
+                                                      && x.RateDate >= filterModel.DateFrom
+                                                      && x.RateDate <= filterModel.DateTo).ToListAsync();
         }
 
         public async Task<IEnumerable<Currency>> GetAllCurrencyAsync()
@@ -36,6 +36,17 @@ namespace BadBroker.Data.Repositories
         {
             await _appContext.Rates.AddRangeAsync(newCachingRates);
             await _appContext.SaveChangesAsync();
+        }
+
+        public async Task<bool> CheckAvailableBaseCurrencyAsync(int currencyId)
+        {
+            return await _appContext.Currencies.AnyAsync(x => x.Id == currencyId && x.AccessBase);
+        }
+
+        public async Task<bool> CheckAvailableResultCurrenciesAsync(IEnumerable<int> currencyIds)
+        {
+            var count = await _appContext.Currencies.CountAsync(x => currencyIds.Contains(x.Id) && x.AccessResult);
+            return count == currencyIds.Count();
         }
     }
 }

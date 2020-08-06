@@ -23,7 +23,14 @@ namespace BadBroker.Services
 
         public async Task<IEnumerable<Rate>> GetRateByFilterAsync(RateFilterModel filterModel)
         {
-            //TODO: Add checking available rates
+            var baseIsAvailable = await _ratesRepository.CheckAvailableBaseCurrencyAsync(filterModel.BaseCurrency.Id);
+            var resultsIsAvailable =
+                await _ratesRepository.CheckAvailableResultCurrenciesAsync(
+                    filterModel.ResultCurrencyList.Select(x => x.Id));
+            if (!baseIsAvailable || !resultsIsAvailable)
+            {
+                throw new ArgumentException("Invalid filter model. Check your currency accessing.");
+            }
             var cachingRates = await _ratesRepository.GetRatesInfoAsync(filterModel);
             if (cachingRates.Count() == filterModel.ResultCurrencyList.Count() *
                 filterModel.DateTo.Subtract(filterModel.DateFrom).Days)
