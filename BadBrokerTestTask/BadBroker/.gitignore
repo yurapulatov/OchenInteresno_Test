@@ -1,0 +1,5 @@
+﻿/obj/
+/bin/
+/node_modules/
+/wwwroot/dist/
+/package-lock.json
