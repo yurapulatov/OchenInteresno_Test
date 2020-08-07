@@ -48,6 +48,11 @@ namespace BadBroker.Services
             
         }
 
+        public async Task<IEnumerable<Currency>> GetCurrenciesList(string type)
+        {
+            return await _ratesRepository.GetCurrencyByTypeAsync(type);
+        }
+
         private IEnumerable<string> GetPartiallyMissingResultCurrencyCodes(IEnumerable<IGrouping<int, Rate>> groupingCachingRates, 
             DateTime dateFrom, DateTime dateTo)
         {

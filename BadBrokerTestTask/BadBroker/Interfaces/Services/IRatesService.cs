@@ -9,5 +9,6 @@ namespace BadBroker.Interfaces.Services
     public interface IRatesService
     {
         Task<IEnumerable<Rate>> GetRateByFilterAsync(RateFilterModel filterModel);
+        Task<IEnumerable<Currency>> GetCurrenciesList(string type);
     }
 }

@@ -26,5 +26,7 @@ namespace BadBroker.Interfaces.Repositories
 
         Task<bool> CheckAvailableBaseCurrencyAsync(int currencyId);
         Task<bool> CheckAvailableResultCurrenciesAsync(IEnumerable<int> currencyIds);
+
+        Task<IEnumerable<Currency>> GetCurrencyByTypeAsync(string type);
     }
 }

@@ -49,8 +49,15 @@
 
     <ItemGroup>
       <TypeScriptCompile Include="ClientApp\App.tsx" />
+      <TypeScriptCompile Include="ClientApp\Controller.ts" />
       <TypeScriptCompile Include="ClientApp\index.tsx" />
+      <TypeScriptCompile Include="ClientApp\models\Currency.ts" />
+      <TypeScriptCompile Include="ClientApp\models\RateFilterModel.ts" />
+      <TypeScriptCompile Include="ClientApp\models\RatesInfo.ts" />
+      <TypeScriptCompile Include="ClientApp\models\Rates.ts" />
+      <TypeScriptCompile Include="ClientApp\pages\MainPage\FilterForm\FilterForm.tsx" />
       <TypeScriptCompile Include="ClientApp\pages\MainPage\MainPage.tsx" />
+      <TypeScriptCompile Include="ClientApp\pages\MainPage\TableResultForm\TableResultForm.tsx" />
       <TypeScriptCompile Include="ClientApp\routes.tsx" />
     </ItemGroup>
 

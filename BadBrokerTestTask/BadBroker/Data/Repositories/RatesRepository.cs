@@ -48,5 +48,15 @@ namespace BadBroker.Data.Repositories
             var count = await _appContext.Currencies.CountAsync(x => currencyIds.Contains(x.Id) && x.AccessResult);
             return count == currencyIds.Count();
         }
+
+        public async Task<IEnumerable<Currency>> GetCurrencyByTypeAsync(string type)
+        {
+            return type switch
+            {
+                "base" => await _appContext.Currencies.Where(x => x.AccessBase).ToListAsync(),
+                "result" => await _appContext.Currencies.Where(x => x.AccessResult).ToListAsync(),
+                _ => new List<Currency>()
+            };
+        }
     }
 }

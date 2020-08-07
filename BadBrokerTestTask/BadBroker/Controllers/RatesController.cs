@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using BadBroker.Interfaces;
+using BadBroker.Entities.DTO;
+using BadBroker.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BadBroker.Controllers
@@ -9,17 +10,24 @@ namespace BadBroker.Controllers
     [Route("[controller]")]
     public class RatesController : Controller
     {
-        private readonly IExternalRatesService _ratesService;
+        private readonly IRatesService _ratesService;
 
-        public RatesController(IExternalRatesService ratesService)
+        public RatesController(IRatesService ratesService)
         {
             _ratesService = ratesService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetRates([FromQuery] DateTime dateFrom, [FromQuery] DateTime dateTo)
+        public async Task<IActionResult> GetRates([FromBody] RateFilterModel filterModel)
         {
-            var result = await _ratesService.GetRatesAsync(dateFrom, dateTo, null, null);
+            var result = await _ratesService.GetRateByFilterAsync(filterModel);
+            return Ok(result);
+        }
+
+        [HttpGet("currency")]
+        public async Task<IActionResult> GetCurrency(string type)
+        {
+            var result = await _ratesService.GetCurrenciesList(type);
             return Ok(result);
         }
     }
