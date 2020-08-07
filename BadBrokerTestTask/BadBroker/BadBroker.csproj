@@ -6,6 +6,7 @@
 
     <ItemGroup>
       <Folder Include="obj\Debug\netcoreapp3.1" />
+      <Folder Include="Views" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,13 +23,35 @@
 
     <ItemGroup>
       <Content Remove="obj\**" />
+      <Content Update="package.json">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Update="tsconfig.json">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Update="Views\Home\Index.cshtml">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="3.1.6" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.2" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.2" />
       <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <TypeScriptCompile Include="ClientApp\App.tsx" />
+      <TypeScriptCompile Include="ClientApp\index.tsx" />
+      <TypeScriptCompile Include="ClientApp\pages\MainPage\MainPage.tsx" />
+      <TypeScriptCompile Include="ClientApp\routes.tsx" />
     </ItemGroup>
 
 

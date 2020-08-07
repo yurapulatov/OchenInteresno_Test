@@ -7,7 +7,7 @@ namespace BadBroker.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class RatesController : ControllerBase
+    public class RatesController : Controller
     {
         private readonly IExternalRatesService _ratesService;
 

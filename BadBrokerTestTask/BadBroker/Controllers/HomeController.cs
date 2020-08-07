@@ -2,8 +2,11 @@
 
 namespace BadBroker.Controllers
 {
-    public class HomeController : ControllerBase
+    public class HomeController : Controller
     {
-        
+        public IActionResult Index()
+        {
+            return View();
+        }
     }
 }

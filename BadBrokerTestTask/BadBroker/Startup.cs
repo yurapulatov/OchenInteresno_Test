@@ -1,6 +1,5 @@
 using BadBroker.Data;
 using BadBroker.Data.Repositories;
-using BadBroker.Entities.DTO;
 using BadBroker.Interfaces;
 using BadBroker.Interfaces.Repositories;
 using BadBroker.Interfaces.Services;
@@ -26,7 +25,8 @@ namespace BadBroker
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllersWithViews();
+            services.AddMvc();
             services.AddScoped<IExternalRatesService, ExternalRatesService>();
             services.AddScoped<IRatesRepository, RatesRepository>();
             services.AddScoped<IRatesService, RatesService>();
@@ -43,12 +43,17 @@ namespace BadBroker
             }
 
             app.UseHttpsRedirection();
-
+            app.UseStaticFiles();
             app.UseRouting();
 
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
+            });
         }
     }
 }

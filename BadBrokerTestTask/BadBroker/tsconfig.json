@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "noImplicitAny": false,
+    "module": "commonjs",
+    "target": "ES5",
+    "lib": [
+      "es2015",
+      "es2017",
+      "dom"
+    ],
+    "baseUrl": "./dist",
+    "outDir": "./wwwroot/dist",
+    "removeComments": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "resolveJsonModule":  true
+  },
+  "exclude": [
+    "node_modules",
+    "wwwroot/*"
+  ]
+}
