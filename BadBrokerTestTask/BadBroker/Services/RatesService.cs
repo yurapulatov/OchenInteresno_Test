@@ -21,6 +21,52 @@ namespace BadBroker.Services
             _ratesRepository = ratesRepository;
         }
 
+        public async Task<IEnumerable<CalculatedRatesModel>> GetCalculatedRatesByFilterAsync(RateFilterModel filterModel)
+        {
+            var rates = await GetRateByFilterAsync(filterModel);
+            var grouping = rates.GroupBy(x => x.ResultCurrencyId);
+            var result = new List<CalculatedRatesModel>();
+            foreach (var item in grouping)
+            {
+                var orderedRates = item.OrderBy(x => x.RateDate).ToList();
+                decimal bestValue = 0;
+                var bestStartDate = DateTime.Today;
+                var bestEndDate = DateTime.Today;
+                //Find optimal start/stop date for buy 
+                for (var i = 0; i < orderedRates.Count() - 1; i++)
+                {
+
+                    for (var j = 1; j < orderedRates.Count(); j++)
+                    {
+                        var value =
+                            (orderedRates[i].RateValue * filterModel.InputValueMoney / orderedRates[j].RateValue)
+                            - (orderedRates[j].RateDate.Subtract(orderedRates[i].RateDate).Days) * 1/*TODO: Config Broker Price*/;
+                        if (value > bestValue)
+                        {
+                            bestValue = value;
+                            bestStartDate = orderedRates[i].RateDate;
+                            bestEndDate = orderedRates[j].RateDate;
+                        }
+                    }
+                }
+                result.Add(new CalculatedRatesModel
+                {
+                    ResultCurrency = orderedRates.First().ResultCurrency,
+                    BaseCurrency = orderedRates.First().BaseCurrency,
+                    RatesInfoList = orderedRates.Select(x => new CalculatedRatesInfoModel
+                    {
+                        Date = x.RateDate,
+                        Value = x.RateValue
+                    }),
+                    BestStartDate = bestStartDate,
+                    BestEndingDate = bestEndDate,
+                    MaxMoneyValue = bestValue
+                });
+            }
+
+            return result;
+        }
+
         public async Task<IEnumerable<Rate>> GetRateByFilterAsync(RateFilterModel filterModel)
         {
             var baseIsAvailable = await _ratesRepository.CheckAvailableBaseCurrencyAsync(filterModel.BaseCurrency.Id);
@@ -33,7 +79,7 @@ namespace BadBroker.Services
             }
             var cachingRates = await _ratesRepository.GetRatesInfoAsync(filterModel);
             if (cachingRates.Count() == filterModel.ResultCurrencyList.Count() *
-                filterModel.DateTo.Subtract(filterModel.DateFrom).Days)
+                filterModel.DateFrom.GetBusinessDaysCount(filterModel.DateTo))
             {
                 return cachingRates;
             }
@@ -59,7 +105,7 @@ namespace BadBroker.Services
             var result = new List<string>();
             foreach (var group in groupingCachingRates)
             {
-                if (group.Count() == dateFrom.Subtract(dateTo).Days)
+                if (group.Count() != dateFrom.GetBusinessDaysCount(dateTo))
                 {
                     result.Add(group.First().ResultCurrency.Code);
                 }
@@ -68,33 +114,36 @@ namespace BadBroker.Services
             return result;
         }
 
-        private Tuple<DateTime, DateTime> GetMinMaxMissingIntervalByCachingItems(IEnumerable<Rate> cachingRates)
+        private Tuple<DateTime, DateTime> GetMinMaxMissingIntervalByCachingItems(IEnumerable<Rate> cachingRates, DateTime startDate, DateTime endDate)
         {
-            var orderedListDate = cachingRates.Select(x => x.RateDate).OrderBy(x => x);
-            DateTime minDateTime = DateTime.Today;
-            DateTime maxDateTime = DateTime.Today;
-            var tempDateTime = orderedListDate.First();
-            foreach (var date in orderedListDate)
+            var ordered = cachingRates.OrderBy(x => x.RateDate);
+            DateTime? minDateTime = null;
+            DateTime? maxDateTime = null;
+            var intervalDayCount = endDate.Subtract(startDate).Days;
+            for (var day = 0; day <= intervalDayCount; day++)
             {
-                if (date.Subtract(tempDateTime).Days > 1)
+
+                var searchDayByBegin = startDate.AddDays(day);
+                var searchDayByEnding = endDate.AddDays(day * -1);
+                if ((minDateTime != null && maxDateTime != null))
                 {
-                    minDateTime = date;
                     break;
                 }
-                tempDateTime = date;
-            }
-            var orderedListDateDesc = cachingRates.Select(x => x.RateDate).OrderByDescending(x => x);
-            tempDateTime = orderedListDateDesc.First();
-            foreach (var date in orderedListDate)
-            {
-                if (tempDateTime.Subtract(date).Days > 1)
+                if (minDateTime == null && searchDayByBegin.DayOfWeek != DayOfWeek.Saturday && searchDayByBegin.DayOfWeek != DayOfWeek.Sunday && !cachingRates.Any(x => x.RateDate.Date == searchDayByBegin))
                 {
-                    maxDateTime = date;
-                    break;
+                    minDateTime = searchDayByBegin;
                 }
-                tempDateTime = date;
+                if (maxDateTime == null && searchDayByEnding.DayOfWeek != DayOfWeek.Saturday && searchDayByEnding.DayOfWeek != DayOfWeek.Sunday && !cachingRates.Any(x => x.RateDate.Date == searchDayByEnding))
+                {
+                    maxDateTime = searchDayByEnding;
+                }
             }
-            return new Tuple<DateTime, DateTime>(minDateTime, maxDateTime);
+
+            if (!minDateTime.HasValue || !maxDateTime.HasValue)
+            {
+                throw new ArgumentException("Nothing to search. Min/Max interval not found");
+            }
+            return new Tuple<DateTime, DateTime>(minDateTime.Value, maxDateTime.Value);
         }
 
         private IEnumerable<string> GetFullMissingResultCurrencyCodes(IEnumerable<string> existResultCurrency,
@@ -116,7 +165,7 @@ namespace BadBroker.Services
             }
             else
             {
-                var groupingCachingRates = cachingRates.GroupBy(x => x.BaseCurrencyId);
+                var groupingCachingRates = cachingRates.GroupBy(x => x.ResultCurrencyId);
                 var fullMissingResultCurrency =
                     GetFullMissingResultCurrencyCodes(groupingCachingRates.Select(x => x.First().ResultCurrency.Code), 
                         filterModel.ResultCurrencyList.Select(x => x.Code));
@@ -136,7 +185,7 @@ namespace BadBroker.Services
                 {
                     if (partiallyMissingResultCurrency.Any())
                     {
-                        minMaxUpdatingInterval = GetMinMaxMissingIntervalByCachingItems(cachingRates);
+                        minMaxUpdatingInterval = GetMinMaxMissingIntervalByCachingItems(cachingRates, filterModel.DateFrom, filterModel.DateTo);
                     }
                 }
             
@@ -151,11 +200,13 @@ namespace BadBroker.Services
 
         private async Task<IEnumerable<Rate>> ConvertResponseToList(RatesResponse response)
         {
-            var currenciesMap = (await _ratesRepository.GetAllCurrencyAsync()).ToDictionary(key => key.Code, value => value.Id);
+            var currenciesMap = (await _ratesRepository.GetAllCurrencyAsync()).ToDictionary(key => key.Code, value => value);
             var results = response.RatesDictionary.Select(x => x.Value.Select(y => new Rate
             {
-                BaseCurrencyId = currenciesMap[response.BaseCurrencyCode],
-                ResultCurrencyId = currenciesMap[y.Key],
+                BaseCurrencyId = currenciesMap[response.BaseCurrencyCode].Id,
+                BaseCurrency = currenciesMap[response.BaseCurrencyCode],
+                ResultCurrencyId = currenciesMap[y.Key].Id,
+                ResultCurrency = currenciesMap[y.Key],
                 RateDate = DateTime.Parse(x.Key),
                 RateValue = y.Value
             }));

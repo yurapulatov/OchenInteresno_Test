@@ -17,10 +17,10 @@ namespace BadBroker.Controllers
             _ratesService = ratesService;
         }
 
-        [HttpGet]
+        [HttpPost]
         public async Task<IActionResult> GetRates([FromBody] RateFilterModel filterModel)
         {
-            var result = await _ratesService.GetRateByFilterAsync(filterModel);
+            var result = await _ratesService.GetCalculatedRatesByFilterAsync(filterModel);
             return Ok(result);
         }
 

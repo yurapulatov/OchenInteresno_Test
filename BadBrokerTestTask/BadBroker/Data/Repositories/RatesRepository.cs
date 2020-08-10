@@ -21,7 +21,10 @@ namespace BadBroker.Data.Repositories
         public async Task<IEnumerable<Rate>> GetRatesInfoAsync(RateFilterModel filterModel)
         {
             var resultCurrencyIds = filterModel.ResultCurrencyList.Select(x => x.Id);
-            return await _appContext.Rates.Where(x => x.BaseCurrencyId == filterModel.BaseCurrency.Id
+            return await _appContext.Rates
+                .Include(x => x.BaseCurrency)
+                .Include(x => x.ResultCurrency)
+                .Where(x => x.BaseCurrencyId == filterModel.BaseCurrency.Id
                                                       && resultCurrencyIds.Contains(x.ResultCurrencyId)
                                                       && x.RateDate >= filterModel.DateFrom
                                                       && x.RateDate <= filterModel.DateTo).ToListAsync();

@@ -30,7 +30,12 @@ export default function TableResultForm (props: TableResultFormProps) {
                 {
                     props.rates.map(rate => {
                         var item = rate.ratesInfoList.find(x => moment(x.date).format('YYYY-MM-DD') == date);
-                        return <td>{item.value}</td>
+                        if (item != null) {
+                            return <td>{item.value}</td>
+                        }
+                        else {
+                            return <td>Holiday</td>
+                        }
                     })
                 }
             </tr>

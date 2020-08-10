@@ -8,33 +8,39 @@ interface FilterFormProps {
     onClickFind: (rateFilterModel: RateFilterModel) => void
 }
 
+class CheckBoxCurrencyModel {
+    currency: Currency;
+    isChecked: boolean;
+}
+
 export default function FilterForm(props: FilterFormProps) {
     /*Initial Data*/
     const [baseCurrenciesList, setBaseCurrenciesList] = useState<Currency[]>([]);
-    const [resultCurrenciesList, setResultCurrenciesList] = useState<Currency[]>([]);
-    const [dataIsLoadingBaseCurrencyList, setIsLoadingBaseCurrencyList] = useState<boolean>(false);
-    const [dataIsLoadingResultCurrencyList, setIsLoadingResultCurrencyList] = useState<boolean>(false);
+    const [resultCurrenciesList, setResultCurrenciesList] = useState<CheckBoxCurrencyModel[]>([]);
+    const [dataIsLoading, setIsLoading] = useState<boolean>(false);
     
     /*Result Data*/
-    const [selectedBaseCurrency, setSelectedBaseCurrency] = useState<Currency>(null);
-    const [selectedResultCurrenciesList, setSelectedResultCurrenciesList] = useState<Currency[]>([]);
+    const [selectedBaseCurrencyCode, setSelectedBaseCurrencyCode] = useState<string>("");
     const [selectedStartDate, setStartDate] = useState<string>(null);
     const [selectedEndDate, setEndDate] = useState<string>(null);
     
     useEffect( () => {
-        if (!dataIsLoadingBaseCurrencyList) {
+        if (!dataIsLoading && baseCurrenciesList.length == 0 && resultCurrenciesList.length == 0) {
+            setIsLoading(true);
             Controller.GetBaseCurrencyList().then(
                 (data: Currency[]) => { 
                     setBaseCurrenciesList(data);
-                    setIsLoadingBaseCurrencyList(true);
+                    setSelectedBaseCurrencyCode(data.find(x => x).code)
                 }
             );
-        }
-        if (!dataIsLoadingResultCurrencyList) {
             Controller.GetResultCurrencyList().then(
-                (data: Currency[]) => { 
-                    setResultCurrenciesList(data);
-                    setIsLoadingResultCurrencyList(true);
+                (data: Currency[]) => {
+                    setResultCurrenciesList(data.map(x => {
+                        let model = new CheckBoxCurrencyModel();
+                        model.currency = x;
+                        model.isChecked = false;
+                        return model;
+                    }));
                 }
             );
         }
@@ -42,24 +48,27 @@ export default function FilterForm(props: FilterFormProps) {
     
     function onFind() {
         let filterForm = new RateFilterModel();
-        filterForm.baseCurrency = selectedBaseCurrency;
+        filterForm.baseCurrency = baseCurrenciesList.find(x => x.code == selectedBaseCurrencyCode);
         filterForm.dateFrom = selectedStartDate;
         filterForm.dateTo = selectedEndDate;
-        filterForm.resultCurrencyList = selectedResultCurrenciesList;
+        filterForm.resultCurrencyList = resultCurrenciesList.filter(x => x.isChecked).map(x => x.currency);
         props.onClickFind(filterForm);
     }
     
-    function onSelectedBaseCurrency(value: string) {
-        setSelectedBaseCurrency(baseCurrenciesList.find(x => x.code == value));
+    function onChangeSelectedResultCurrencies(id: number, isChecked: boolean) {
+        let index = resultCurrenciesList.findIndex(x => x.currency.id == id);
+        let newArray =  [...resultCurrenciesList];
+        newArray[index] = {...newArray[index], isChecked: isChecked};
+        setResultCurrenciesList(newArray);
     }
     
-    let disabledFind = selectedResultCurrenciesList.length == 0 || selectedEndDate == null || selectedStartDate == null || selectedBaseCurrency == null;
+    let disabledFind = resultCurrenciesList.filter(x => x.isChecked).length == 0 || selectedEndDate == null || selectedStartDate == null || selectedBaseCurrencyCode == "";
     
     return (
         <div className={"filter_form"}>
             <div className={"filter_form__item"}>
                 <div className={"filter_form__title"}>Select base currency</div>
-                <select onChange={(event) => onSelectedBaseCurrency(event.target.value)}>
+                <select value={selectedBaseCurrencyCode} onChange={(event) => setSelectedBaseCurrencyCode(event.target.value)}>
                     {baseCurrenciesList.map( x => {
                         return <option value={x.code}>{`${x.code} (${x.name})`}</option>
                     })}
@@ -69,8 +78,12 @@ export default function FilterForm(props: FilterFormProps) {
                 <div className={"filter_form__title"}>Checking result currency</div>
                 {resultCurrenciesList.length > 0 && resultCurrenciesList.map( x => {
                     return <div>
-                        <input name={'result_currency'} type={"checkbox"}/>
-                        <label>{`${x.code} (${x.name})`}</label>
+                        <input name={'result_currency'} 
+                               type={"checkbox"} 
+                               onChange={(event => { onChangeSelectedResultCurrencies(x.currency.id, !x.isChecked)})}
+                               value={x.isChecked.toString()}
+                        />
+                        <label>{`${x.currency.code} (${x.currency.name})`}</label>
                     </div>
                 })}
             </div>

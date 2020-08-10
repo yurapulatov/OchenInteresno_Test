@@ -26,7 +26,7 @@ namespace BadBroker.Services
             var resultCurrencyCodesString = listResultCurrencyCodes.
                 Aggregate(string.Empty, (current, currencyCode) => current + (currencyCode + ","));
             //delete last ","
-            resultCurrencyCodesString.Remove(resultCurrencyCodesString.Length);
+            resultCurrencyCodesString = resultCurrencyCodesString.Remove(resultCurrencyCodesString.Length - 1);
 
             using var httpClient = new HttpClient
             {

@@ -10,12 +10,15 @@ export default class Controller {
         return this.sendQuery("https://localhost:5001/rates/currency?type=base", "GET");
     }
     public static async GetRates(filterModel: RateFilterModel) : Promise<Rates[]>{
-        return this.sendQuery("https://localhost:5001/rates", "GET", filterModel);
+        return this.sendQuery("https://localhost:5001/rates", "POST", filterModel);
     }
     
     private static async sendQuery(url: string, method: string, body?: any) : Promise<any> {
         let response = await fetch(url, {
             method: method,
+            headers: Object.assign(
+                {'Content-Type': 'application/json;charset=utf-8'}
+            ),
             body: JSON.stringify(body)
         });
         return response.json();
