@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BadBroker.Entities.DTO;
-using BadBroker.Interfaces;
+using BadBroker.Interfaces.Services;
 using Newtonsoft.Json;
 
 namespace BadBroker.Services

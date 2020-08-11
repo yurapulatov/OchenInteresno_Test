@@ -7,6 +7,7 @@ using BadBroker.Entities.DTO;
 using BadBroker.Interfaces;
 using BadBroker.Interfaces.Repositories;
 using BadBroker.Interfaces.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace BadBroker.Services
 {
@@ -14,11 +15,13 @@ namespace BadBroker.Services
     {
         private readonly IRatesRepository _ratesRepository;
         private readonly IExternalRatesService _externalRatesService;
+        private readonly IConfiguration _configuration;
 
-        public RatesService(IExternalRatesService externalRatesService, IRatesRepository ratesRepository)
+        public RatesService(IExternalRatesService externalRatesService, IRatesRepository ratesRepository, IConfiguration configuration)
         {
             _externalRatesService = externalRatesService;
             _ratesRepository = ratesRepository;
+            _configuration = configuration;
         }
 
         public async Task<IEnumerable<CalculatedRatesModel>> GetCalculatedRatesByFilterAsync(RateFilterModel filterModel)
@@ -26,6 +29,7 @@ namespace BadBroker.Services
             var rates = await GetRateByFilterAsync(filterModel);
             var grouping = rates.GroupBy(x => x.ResultCurrencyId);
             var result = new List<CalculatedRatesModel>();
+            var badBrokerPrice = _configuration.GetValue<decimal>("BadBrokerPrice");
             foreach (var item in grouping)
             {
                 var orderedRates = item.OrderBy(x => x.RateDate).ToList();
@@ -35,12 +39,11 @@ namespace BadBroker.Services
                 //Find optimal start/stop date for buy 
                 for (var i = 0; i < orderedRates.Count() - 1; i++)
                 {
-
                     for (var j = i; j < orderedRates.Count(); j++)
                     {
                         var value =
                             (orderedRates[i].RateValue * filterModel.InputValueMoney / orderedRates[j].RateValue)
-                            - (orderedRates[j].RateDate.Subtract(orderedRates[i].RateDate).Days) * 1/*TODO: Config Broker Price*/;
+                            - (orderedRates[j].RateDate.Subtract(orderedRates[i].RateDate).Days) * badBrokerPrice;
                         if (value > bestValue)
                         {
                             bestValue = value;
@@ -69,6 +72,10 @@ namespace BadBroker.Services
 
         public async Task<IEnumerable<Rate>> GetRateByFilterAsync(RateFilterModel filterModel)
         {
+            if (filterModel.DateTo < filterModel.DateFrom || filterModel.DateFrom.AddMonths(2) < filterModel.DateTo)
+            {
+                throw new ArgumentException("Invalid filter model. Date range is invalid.");
+            }
             var baseIsAvailable = await _ratesRepository.CheckAvailableBaseCurrencyAsync(filterModel.BaseCurrency.Id);
             var resultsIsAvailable =
                 await _ratesRepository.CheckAvailableResultCurrenciesAsync(
@@ -114,7 +121,7 @@ namespace BadBroker.Services
             return result;
         }
 
-        private Tuple<DateTime, DateTime> GetMinMaxMissingIntervalByCachingItems(IEnumerable<Rate> cachingRates, DateTime startDate, DateTime endDate)
+        private Tuple<DateTime?, DateTime?> GetMinMaxMissingIntervalByCachingItems(IEnumerable<Rate> cachingRates, DateTime startDate, DateTime endDate)
         {
             var ordered = cachingRates.OrderBy(x => x.RateDate);
             DateTime? minDateTime = null;
@@ -139,11 +146,7 @@ namespace BadBroker.Services
                 }
             }
 
-            if (!minDateTime.HasValue || !maxDateTime.HasValue)
-            {
-                throw new ArgumentException("Nothing to search. Min/Max interval not found");
-            }
-            return new Tuple<DateTime, DateTime>(minDateTime.Value, maxDateTime.Value);
+            return new Tuple<DateTime?, DateTime?>(minDateTime, maxDateTime);
         }
 
         private IEnumerable<string> GetFullMissingResultCurrencyCodes(IEnumerable<string> existResultCurrency,
@@ -171,7 +174,7 @@ namespace BadBroker.Services
                         filterModel.ResultCurrencyList.Select(x => x.Code));
                 var partiallyMissingResultCurrency =
                     GetPartiallyMissingResultCurrencyCodes(groupingCachingRates, filterModel.DateFrom, filterModel.DateTo);
-                var minMaxUpdatingInterval = new Tuple<DateTime, DateTime>(DateTime.Today, DateTime.Today);
+                var minMaxUpdatingInterval = new Tuple<DateTime?, DateTime?>(null, null);
                 if (!partiallyMissingResultCurrency.Any() && !fullMissingResultCurrency.Any())
                 {
                     return new List<Rate>();
@@ -179,7 +182,7 @@ namespace BadBroker.Services
             
                 if (fullMissingResultCurrency.Any())
                 {
-                    minMaxUpdatingInterval = new Tuple<DateTime, DateTime>(filterModel.DateFrom, filterModel.DateTo);
+                    minMaxUpdatingInterval = new Tuple<DateTime?, DateTime?>(filterModel.DateFrom, filterModel.DateTo);
                 }
                 else
                 {
@@ -189,9 +192,15 @@ namespace BadBroker.Services
                     }
                 }
             
+                
+                if (!minMaxUpdatingInterval.Item1.HasValue || !minMaxUpdatingInterval.Item2.HasValue)
+                {
+                    throw new ArgumentException("Nothing to search. Min/Max interval not found");
+                }
+                
                 var missingCurrencyCodes = new List<string>(fullMissingResultCurrency);
                 missingCurrencyCodes.AddRange(partiallyMissingResultCurrency);
-                response = await _externalRatesService.GetRatesAsync(minMaxUpdatingInterval.Item1, minMaxUpdatingInterval.Item2, 
+                response = await _externalRatesService.GetRatesAsync(minMaxUpdatingInterval.Item1.Value, minMaxUpdatingInterval.Item2.Value, 
                     filterModel.BaseCurrency.Code,
                     missingCurrencyCodes);
             }

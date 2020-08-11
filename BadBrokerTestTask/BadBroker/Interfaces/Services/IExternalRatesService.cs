@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BadBroker.Entities.DTO;
 
-namespace BadBroker.Interfaces
+namespace BadBroker.Interfaces.Services
 {
     public interface IExternalRatesService
     {

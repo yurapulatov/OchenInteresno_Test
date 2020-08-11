@@ -58,7 +58,7 @@ export default function TableResultForm (props: TableResultFormProps) {
             <tr>
                 <td className={"table_result_form__cell"}>
                     <div className={"table_result_form__cell__value table_result_form__cell__value-header"}>
-                        Your incoming
+                        Your income
                     </div>
                 </td>
                 {
