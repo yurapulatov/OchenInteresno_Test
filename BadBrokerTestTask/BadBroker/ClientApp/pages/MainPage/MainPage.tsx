@@ -21,6 +21,10 @@ export default function MainPage() {
     
     return <div className={"main_page"}>
         <FilterForm onClickFind={(filterModel: RateFilterModel) => onClickFind(filterModel)}/>
-        {rates.length > 0 && <TableResultForm rates={rates} startDate={filterModel.dateFrom} endDate={filterModel.dateTo}/>}
+        <TableResultForm rates={rates} 
+                         startDate={filterModel.dateFrom} 
+                         endDate={filterModel.dateTo}
+                         inputMoney={filterModel.inputValueMoney}
+        />
     </div>
 }

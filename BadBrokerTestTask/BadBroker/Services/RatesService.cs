@@ -30,13 +30,13 @@ namespace BadBroker.Services
             {
                 var orderedRates = item.OrderBy(x => x.RateDate).ToList();
                 decimal bestValue = 0;
-                var bestStartDate = DateTime.Today;
-                var bestEndDate = DateTime.Today;
+                DateTime? bestStartDate = null;
+                DateTime? bestEndDate = null;
                 //Find optimal start/stop date for buy 
                 for (var i = 0; i < orderedRates.Count() - 1; i++)
                 {
 
-                    for (var j = 1; j < orderedRates.Count(); j++)
+                    for (var j = i; j < orderedRates.Count(); j++)
                     {
                         var value =
                             (orderedRates[i].RateValue * filterModel.InputValueMoney / orderedRates[j].RateValue)

@@ -1,11 +1,36 @@
 .filter_form {
   display: flex;
   flex-direction: column;
-  width: 40%;
+  width: 300px;
+  position: sticky;
+  background-color: #bababa;
+  
+  &__title {
+    font-size: 16px;
+    margin-bottom: 5px;
+  }
+  
   &__item {
     padding: 5px;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
     display: flex;
+    border: gray solid 1px;
     flex-direction: column;
+    &-datepicker {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+  }
+  
+  &__button_submit {
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 10px;
+    button {
+      font-size: 14px;
+      padding: 5px;
+      width: 100px;
+    }
   }
 }

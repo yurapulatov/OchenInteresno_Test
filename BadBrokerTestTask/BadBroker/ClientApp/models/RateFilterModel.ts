@@ -5,4 +5,5 @@ export default class RateFilterModel {
     public dateTo: string;
     public baseCurrency: Currency;
     public resultCurrencyList: Currency[];
+    public inputValueMoney: number;
 }

@@ -7,5 +7,5 @@ export default class Rates {
     public ratesInfoList: RatesInfo[];
     public bestStartDate: string;
     public bestEndingDate: string;
-    public bestMoneyValue: number;
+    public maxMoneyValue: number;
 }

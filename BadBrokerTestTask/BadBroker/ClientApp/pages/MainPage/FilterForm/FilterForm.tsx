@@ -3,6 +3,7 @@ import Currency from "../../../models/Currency";
 import Controller from "../../../Controller";
 import RateFilterModel from "../../../models/RateFilterModel";
 import "./FilterForm.less"
+import moment from "moment";
 
 interface FilterFormProps {
     onClickFind: (rateFilterModel: RateFilterModel) => void
@@ -23,6 +24,7 @@ export default function FilterForm(props: FilterFormProps) {
     const [selectedBaseCurrencyCode, setSelectedBaseCurrencyCode] = useState<string>("");
     const [selectedStartDate, setStartDate] = useState<string>(null);
     const [selectedEndDate, setEndDate] = useState<string>(null);
+    const [valueMoney, setValueMoney] = useState<number>(0);
     
     useEffect( () => {
         if (!dataIsLoading && baseCurrenciesList.length == 0 && resultCurrenciesList.length == 0) {
@@ -52,6 +54,7 @@ export default function FilterForm(props: FilterFormProps) {
         filterForm.dateFrom = selectedStartDate;
         filterForm.dateTo = selectedEndDate;
         filterForm.resultCurrencyList = resultCurrenciesList.filter(x => x.isChecked).map(x => x.currency);
+        filterForm.inputValueMoney = valueMoney;
         props.onClickFind(filterForm);
     }
     
@@ -67,18 +70,27 @@ export default function FilterForm(props: FilterFormProps) {
     return (
         <div className={"filter_form"}>
             <div className={"filter_form__item"}>
+                <div className={"filter_form__title"}>Input your money value</div>
+                <input type={"number"} 
+                       value={valueMoney} 
+                       onChange={(e) => setValueMoney(parseInt(e.target.value))}
+                       min={0}
+                />
+            </div>
+            <div className={"filter_form__item"}>
                 <div className={"filter_form__title"}>Select base currency</div>
                 <select value={selectedBaseCurrencyCode} onChange={(event) => setSelectedBaseCurrencyCode(event.target.value)}>
-                    {baseCurrenciesList.map( x => {
-                        return <option value={x.code}>{`${x.code} (${x.name})`}</option>
+                    {baseCurrenciesList.map( (x, index) => {
+                        return <option key={index} value={x.code}>{`${x.code} (${x.name})`}</option>
                     })}
                 </select>
             </div>
-            <div className={"filter_from__item"}>
+            <div className={"filter_form__item"}>
                 <div className={"filter_form__title"}>Checking result currency</div>
-                {resultCurrenciesList.length > 0 && resultCurrenciesList.map( x => {
+                {resultCurrenciesList.length > 0 && resultCurrenciesList.map( (x, index) => {
                     return <div>
-                        <input name={'result_currency'} 
+                        <input name={'result_currency'}
+                               key={index}
                                type={"checkbox"} 
                                onChange={(event => { onChangeSelectedResultCurrencies(x.currency.id, !x.isChecked)})}
                                value={x.isChecked.toString()}
@@ -89,12 +101,19 @@ export default function FilterForm(props: FilterFormProps) {
             </div>
             <div className={"filter_form__item"}>
                 <div className={"filter_form__title"}>Choose filter date range</div>
-                <input onChange={(event) => setStartDate(event.target.value)} 
-                       type={"date"}
-                       name={"start_date"}/>
-                <input onChange={(event) => setEndDate(event.target.value)} 
-                       type={"date"} 
-                       name={"end_date"}/>
+                <div className={"filter_form__item-datepicker"}>
+                    <input onChange={(event) => setStartDate(event.target.value)}
+                           type={"date"}
+                           name={"start_date"}
+                           max={moment(new Date()).format("YYYY-MM-DD")}
+                    />
+                    <input onChange={(event) => setEndDate(event.target.value)}
+                           type={"date"}
+                           name={"end_date"}
+                           max={moment(new Date()).format("YYYY-MM-DD")}
+                    />
+                </div>
+
             </div>
             <div className={"filter_form__button_submit"}>
                 <button disabled={disabledFind} onClick={() => onFind()}>Find</button>
