@@ -20,6 +20,8 @@ export default function FilterForm(props: FilterFormProps) {
     const [resultCurrenciesList, setResultCurrenciesList] = useState<CheckBoxCurrencyModel[]>([]);
     const [dataIsLoading, setIsLoading] = useState<boolean>(false);
     
+    const [errorDate, setErrorDate] = useState<boolean>(false);
+    
     /*Result Data*/
     const [selectedBaseCurrencyCode, setSelectedBaseCurrencyCode] = useState<string>("");
     const [selectedStartDate, setStartDate] = useState<string>(null);
@@ -49,6 +51,13 @@ export default function FilterForm(props: FilterFormProps) {
     });
     
     function onFind() {
+        if (validateDate()) {
+            setErrorDate(false);
+        }
+        else {
+            setErrorDate(true);
+            return;
+        }
         let filterForm = new RateFilterModel();
         filterForm.baseCurrency = baseCurrenciesList.find(x => x.code == selectedBaseCurrencyCode);
         filterForm.dateFrom = selectedStartDate;
@@ -56,6 +65,10 @@ export default function FilterForm(props: FilterFormProps) {
         filterForm.resultCurrencyList = resultCurrenciesList.filter(x => x.isChecked).map(x => x.currency);
         filterForm.inputValueMoney = valueMoney;
         props.onClickFind(filterForm);
+    }
+    
+    function validateDate() : boolean {
+        return moment(selectedStartDate).add(2, 'month') > moment(selectedEndDate);
     }
     
     function onChangeSelectedResultCurrencies(id: number, isChecked: boolean) {
@@ -113,7 +126,7 @@ export default function FilterForm(props: FilterFormProps) {
                            max={moment(new Date()).format("YYYY-MM-DD")}
                     />
                 </div>
-
+                {errorDate && <label className={"filter_form__error_text"}>Error: date interval is more than 2 months</label>}
             </div>
             <div className={"filter_form__button_submit"}>
                 <button disabled={disabledFind} onClick={() => onFind()}>Find</button>
