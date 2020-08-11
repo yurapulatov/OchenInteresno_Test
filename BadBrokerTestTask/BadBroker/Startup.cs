@@ -48,12 +48,22 @@ namespace BadBroker
 
             app.UseAuthorization();
 
+            MigrateDatabase(app);
+            
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
             });
+        }
+
+        private void MigrateDatabase(IApplicationBuilder app)
+        {
+            using var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            context.Database.Migrate();
         }
     }
 }
